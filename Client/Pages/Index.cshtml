@@ -111,16 +111,17 @@
                                 <a class="nav-link dropdown-toggle" style="color:whitesmoke" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Recipes</a>
                                 <div class="dropdown-menu" x-data>
                                     <button class="dropdown-item" x-on:click="show = true">View Recipes</button>
-                                    <button class="dropdown-item" data-bs-target="#addRecipeModal2" data-bs-toggle="modal">Add Recipe</button>
+                                    <button id="addRecipeNavBarButton" class="dropdown-item" data-bs-target="#addRecipeModal2" data-bs-toggle="modal">Add Recipe</button>
                                 </div>
                             </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" style="color:whitesmoke" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Categories</a>
                                 <div class="dropdown-menu" x-data>
                                     <button class="dropdown-item" x-on:click="show = false">View Categories</button>
-                                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addCategoryModal">Add Category</button>
+                                    <button id="addCategoryNavBarButton" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addCategoryModal">Add Category</button>
                                 </div>
                             </li>
+                            <button id="usersNavBarButton" x-on:click="" class="btn btn-primary my-2 my-sm-0" type="button">Users</button>
                         </ul>
                         <button x-on:click="logOut()" class="btn btn-primary my-2 my-sm-0" type="button">Log Out</button>
                     </div>
@@ -232,12 +233,12 @@
                                                 <label for="title-text" class="col-form-label">Title</label>
                                             </div>
                                             <div class="form-floating mb-3">
-                                                <textarea x-model="selectedRecipe.ingredients.join('\n')"
+                                                <textarea x-model="selectedRecipe.ingredients"
                                                           class="form-control" id="ingredients-text" minlength="5"></textarea>
                                                 <label for="ingredients-text" class="col-form-label">Ingredients</label>
                                             </div>
                                             <div class="form-floating mb-3">
-                                                <textarea x-model="selectedRecipe.instructions.join('\n')"
+                                                <textarea x-model="selectedRecipe.instructions"
                                                           class="form-control" id="Instructions-text" minlength="5"></textarea>
                                                 <label for="instructions-text" class="col-form-label">Instructions</label>
                                             </div>
@@ -564,6 +565,8 @@
             localStorage.setItem('token', responseJson['token']);
             localStorage.setItem('refreshToken', responseJson['refreshToken']);
             localStorage.setItem('userName', responseJson['username']);
+            const role = responseJson['userRole'];
+            localStorage.setItem('userRole', role);
             swalSuccesful("Logged In");
             return true;
         }
@@ -585,6 +588,12 @@
 
         async function getRecipes() {
             //const antiforgery = await getTokenFromPage();
+            if(localStorage.userRole !== 'Admin'){
+                console.log(localStorage.userRole);
+                document.getElementById("addRecipeNavBarButton").remove();
+                document.getElementById("addCategoryNavBarButton").remove();
+                document.getElementById("usersNavBarButton").remove();
+            }
             let response = await fetch("@Url/recipes", {
                 method: "GET",
                 headers: {
@@ -817,8 +826,6 @@
                 text: message,
             });
         }
-
-        window.onload = fetchToken;
     </script>
 </body>
 </html>
