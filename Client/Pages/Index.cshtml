@@ -97,7 +97,7 @@
     </div>
 
     <template x-if="loggedIn" x-init="loggedIn = checkAuthenticated();">
-        <div x-data="{show:true}">
+        <div x-data="{viewRecipes:true,viewCategories:false,viewUsers:false}">
             @*Navbar*@
             <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
                 <div class="container-fluid">
@@ -110,18 +110,22 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" style="color:whitesmoke" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Recipes</a>
                                 <div class="dropdown-menu" x-data>
-                                    <button class="dropdown-item" x-on:click="show = true">View Recipes</button>
-                                    <button id="addRecipeNavBarButton" class="dropdown-item" data-bs-target="#addRecipeModal2" data-bs-toggle="modal">Add Recipe</button>
+                                    <button class="dropdown-item" 
+                                    x-on:click="viewRecipes = true;viewCategories=false;viewUsers = false;">View Recipes</button>
+                                    <button id="addRecipeNavBarButton" class="dropdown-item" 
+                                    data-bs-target="#addRecipeModal2" data-bs-toggle="modal">Add Recipe</button>
                                 </div>
                             </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" style="color:whitesmoke" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Categories</a>
                                 <div class="dropdown-menu" x-data>
-                                    <button class="dropdown-item" x-on:click="show = false">View Categories</button>
-                                    <button id="addCategoryNavBarButton" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#addCategoryModal">Add Category</button>
+                                    <button class="dropdown-item" 
+                                    x-on:click="viewRecipes = false;viewCategories=true;viewUsers = false;">View Categories</button>
+                                    <button id="addCategoryNavBarButton" class="dropdown-item" 
+                                    data-bs-toggle="modal" data-bs-target="#addCategoryModal">Add Category</button>
                                 </div>
                             </li>
-                            <button id="usersNavBarButton" x-on:click="" class="btn btn-primary my-2 my-sm-0" type="button">Users</button>
+                            <button id="usersNavBarButton" x-on:click="viewRecipes=false;viewCategories=false;viewUsers=true;" class="btn btn-primary my-2 my-sm-0" type="button">Users</button>
                         </ul>
                         <button x-on:click="logOut()" class="btn btn-primary my-2 my-sm-0" type="button">Log Out</button>
                     </div>
@@ -129,7 +133,7 @@
             </nav>
 
             @*View Recipes*@
-            <div x-data x-show="show" class="container">
+            <div x-data x-show="viewRecipes" class="container">
                 <h1 class="text-center my-4" style="color:white">Recipes</h1>
                 <div class="row row-cols-md-4 "
                      x-data="
@@ -337,7 +341,7 @@
             </div>
 
             @*categories view*@
-            <div x-show="!show" x-data="{
+            <div x-show="viewCategories" x-data="{
             allCategories:[],
             index:0,
             selectedCategory:'',
@@ -442,6 +446,10 @@
                 </div>
             </div>
 
+            @*Users View*@
+            <div x-show="viewUsers" x-data="{}">
+                <h1 class="text-center my-4" style="color:white">Users</h1>
+            </div>
 
         </div>
 
