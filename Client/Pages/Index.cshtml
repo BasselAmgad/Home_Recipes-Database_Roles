@@ -58,7 +58,7 @@
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" x-on:click="this.loggedIn = await loginUser(username,password); console.log(loggedIn);" class="btn btn-primary">Login</button>
+                                        <button type="button" x-on:click="this.loggedIn = await loginUser(username,password);" class="btn btn-primary">Login</button>
                                     </div>
                                 </form>
                             </template>
@@ -110,19 +110,27 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" style="color:whitesmoke" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Recipes</a>
                                 <div class="dropdown-menu" x-data>
-                                    <button class="dropdown-item" 
-                                    x-on:click="viewRecipes = true;viewCategories=false;viewUsers = false;">View Recipes</button>
-                                    <button id="addRecipeNavBarButton" class="dropdown-item" 
-                                    data-bs-target="#addRecipeModal2" data-bs-toggle="modal">Add Recipe</button>
+                                    <button class="dropdown-item"
+                                            x-on:click="viewRecipes = true;viewCategories=false;viewUsers = false;">
+                                        View Recipes
+                                    </button>
+                                    <button id="addRecipeNavBarButton" class="dropdown-item"
+                                            data-bs-target="#addRecipeModal2" data-bs-toggle="modal">
+                                        Add Recipe
+                                    </button>
                                 </div>
                             </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" style="color:whitesmoke" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Categories</a>
                                 <div class="dropdown-menu" x-data>
-                                    <button class="dropdown-item" 
-                                    x-on:click="viewRecipes = false;viewCategories=true;viewUsers = false;">View Categories</button>
-                                    <button id="addCategoryNavBarButton" class="dropdown-item" 
-                                    data-bs-toggle="modal" data-bs-target="#addCategoryModal">Add Category</button>
+                                    <button class="dropdown-item"
+                                            x-on:click="viewRecipes = false;viewCategories=true;viewUsers = false;">
+                                        View Categories
+                                    </button>
+                                    <button id="addCategoryNavBarButton" class="dropdown-item"
+                                            data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                        Add Category
+                                    </button>
                                 </div>
                             </li>
                             <button id="usersNavBarButton" x-on:click="viewRecipes=false;viewCategories=false;viewUsers=true;" class="btn btn-primary my-2 my-sm-0" type="button">Users</button>
@@ -447,8 +455,34 @@
             </div>
 
             @*Users View*@
-            <div x-show="viewUsers" x-data="{}">
+            <div x-show="viewUsers" class="container"
+                 x-data="{
+                allUsers:[],
+                selectedUser:{id:'',userName:'',password:'',userRoles:[]},
+                index:0,
+                async init(){this.allUsers = await getUsers();}
+             }">
                 <h1 class="text-center my-4" style="color:white">Users</h1>
+                <div class="row row-cols-md-4 ">
+                    <template x-for="user in allUsers">
+                        <div x-data="{cardUser:{},init(){this.carUser = allUsers[index++]}}">
+                            <div class="card card text-white bg-primary mb-3" x-bind:id="`heading_${user.id}`">
+                                <div class="card-header">
+                                    <div class="d-grid">
+                                        <button class="btn btn-lg btn-primary" aria-expanded="false" x-on:click="selectedUser={...cardUser}"
+                                                data-bs-toggle="modal" data-bs-target="#viewUserModal">
+                                            <h4><span x-text="user.userName"></span></h4>
+                                        </button>
+                                    </div>
+                                    <template x-for="role in user.userRoles">
+                                        <span style="font-size:12px; margin-top:5px; margin-right: 5px;" class="badge rounded-pill bg-light" x-text="role"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
             </div>
 
         </div>
@@ -573,8 +607,8 @@
             localStorage.setItem('token', responseJson['token']);
             localStorage.setItem('refreshToken', responseJson['refreshToken']);
             localStorage.setItem('userName', responseJson['username']);
-            const role = responseJson['userRole'];
-            localStorage.setItem('userRole', role);
+            const roles = responseJson['userRoles'];
+            localStorage.setItem("userRoles", JSON.stringify(roles));
             swalSuccesful("Logged In");
             return true;
         }
@@ -595,9 +629,10 @@
         }
 
         async function getRecipes() {
+            var roles = JSON.parse(localStorage.getItem("userRoles"));
+            console.log(roles);
             //const antiforgery = await getTokenFromPage();
-            if(localStorage.userRole !== 'Admin'){
-                console.log(localStorage.userRole);
+            if (!roles.includes('Admin')) {
                 document.getElementById("addRecipeNavBarButton").remove();
                 document.getElementById("addCategoryNavBarButton").remove();
                 document.getElementById("usersNavBarButton").remove();
@@ -640,6 +675,33 @@
             }
             let categories = await response.json();
             return categories;
+        }
+
+        async function getUsers() {
+            var roles = JSON.parse(localStorage.getItem("userRoles"));
+            if (!roles.includes("Admin")) {
+                swalUnauthorized();
+                return;
+            }
+            let response = await fetch('@Url/users', {
+                method: 'GET',
+                headers: {
+                    "Authorization": "Bearer " + localStorage.token,
+                    "Content-Type": "application/json"
+                },
+                credentials: 'include'
+            });
+            if (response.status === 401) {
+                swalUnauthorized();
+                return [];
+            }
+            if (response.status != 200) {
+                swalErrorMessage();
+                return [];
+            }
+            let users = await response.json();
+            console.log(users);
+            return users;
         }
 
         async function addRecipe(recipe) {
