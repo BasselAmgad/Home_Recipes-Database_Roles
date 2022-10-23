@@ -20,6 +20,12 @@ namespace HomeRecipes.Migrations.Seedings
                 roleName = "Guest",
                 is_active = true
             });
+            Insert.IntoTable(TableName.Roles).Row(new
+            {
+                id = new Guid("5510db9e-2173-46cf-a5b2-6683d3f97ffd"),
+                roleName = "User",
+                is_active = true
+            });
         }
         public override void Down()
         {
