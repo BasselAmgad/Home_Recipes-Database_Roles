@@ -166,11 +166,16 @@ app.MapPost("/login", [AllowAnonymous] async (DataAccessAdapter adapter, User us
         return Results.Unauthorized();
     // Get role of the user
     var userRoleEntity = new UserRoleEntity { UserId = userData.Id };
-    var userRolesIds = await metaData.UserRole.FirstOrDefaultAsync(u => u.UserId == userData.Id);
-    var RoleEntity = await metaData.Role.FirstOrDefaultAsync(r => r.Id == userRolesIds.RoleId);
-    var userRole = "Guest";
-    if (RoleEntity != null)
-        userRole = RoleEntity.RoleName;
+    // Fetch the userRoleEntities of the user
+    var userRoleNames = new List<string>();
+    var userRolesIds = await metaData.UserRole.Where(u => u.UserId == userData.Id).ToListAsync();
+    foreach(var userRoleId in userRolesIds)
+    {
+        var RoleEntity = await metaData.Role.FirstOrDefaultAsync(r => r.Id == userRoleId.RoleId);
+        userRoleNames.Add(RoleEntity.RoleName);
+    }
+    // if user has no roles add the role Guest
+    if (userRoleNames.Count == 0) userRoleNames.Add("Guest");
     var issuer = builder.Configuration["Jwt:Issuer"];
     var audience = builder.Configuration["Jwt:Audience"];
     var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]));
@@ -184,16 +189,19 @@ app.MapPost("/login", [AllowAnonymous] async (DataAccessAdapter adapter, User us
                 new Claim("Id", userData.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Sub, userData.Username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Role,userRole),
             }),
         Expires = DateTime.UtcNow.AddHours(6),
         Audience = audience,
         Issuer = issuer,
         SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
     };
+    foreach(var userRoleName in userRoleNames)
+    {
+        tokenDescriptor.Subject.AddClaim(new Claim(ClaimTypes.Role, userRoleName));
+    }
     var token = jwtTokenHandler.CreateToken(tokenDescriptor);
     var jwtToken = jwtTokenHandler.WriteToken(token);
-    return Results.Ok(new AuthenticatedResponse { RefreshToken = "", Token = jwtToken, UserName = userData.Username, UserRole = userRole });
+    return Results.Ok(new AuthenticatedResponse { RefreshToken = "", Token = jwtToken, UserName = userData.Username, UserRoles = userRoleNames });
 });
 
 app.MapGet("/recipes", [Authorize] async (DataAccessAdapter adapter) =>
